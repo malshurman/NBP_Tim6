@@ -1,30 +1,41 @@
 package ba.unsa.etf.academicmanagementsystem.model;
 
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import lombok.Data;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
-import java.util.Date;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "NBP_EXAM")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Exam {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID", nullable = false)
     private Long id;
 
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "course_id", nullable = false)
-    private Course course;
+    @Column(name = "EXAM_DATE", nullable = false)
+    @NotNull(message = "Exam date cannot be null")
+    private LocalDateTime examDate;
 
-    @NotNull
-    private Date examDate;
+    @Column(name = "COURSE_ID", nullable = false)
+    @NotNull(message = "Course ID cannot be null")
+    private Long courseId;
 
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "room_id", nullable = false)
-    private Room room;
+    @Column(name = "ROOM_ID", nullable = false)
+    @NotNull(message = "Room ID cannot be null")
+    private Long roomId;
 }
