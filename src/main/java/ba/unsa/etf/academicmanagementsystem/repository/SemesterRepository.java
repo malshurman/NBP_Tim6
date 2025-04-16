@@ -22,18 +22,6 @@ public class SemesterRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private static final class SemesterMapper implements RowMapper<Semester> {
-        @Override
-        public Semester mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Semester semester = new Semester();
-            semester.setId(rs.getLong("ID"));
-            semester.setName(rs.getString("NAME"));
-            semester.setStartDate(rs.getTimestamp("START_DATE").toLocalDateTime());
-            semester.setEndDate(rs.getTimestamp("END_DATE").toLocalDateTime());
-            return semester;
-        }
-    }
-
     public List<Semester> findAllSemesters() {
         String sql = "SELECT * FROM NBP_SEMESTER";
         return jdbcTemplate.query(sql, new SemesterMapper());
@@ -80,5 +68,17 @@ public class SemesterRepository {
     public void deleteSemesterById(Long id) {
         String sql = "DELETE FROM NBP_SEMESTER WHERE ID = ?";
         jdbcTemplate.update(sql, id);
+    }
+
+    private static final class SemesterMapper implements RowMapper<Semester> {
+        @Override
+        public Semester mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Semester semester = new Semester();
+            semester.setId(rs.getLong("ID"));
+            semester.setName(rs.getString("NAME"));
+            semester.setStartDate(rs.getTimestamp("START_DATE").toLocalDateTime());
+            semester.setEndDate(rs.getTimestamp("END_DATE").toLocalDateTime());
+            return semester;
+        }
     }
 }

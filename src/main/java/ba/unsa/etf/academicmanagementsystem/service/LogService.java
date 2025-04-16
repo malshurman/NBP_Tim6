@@ -2,8 +2,9 @@ package ba.unsa.etf.academicmanagementsystem.service;
 
 import ba.unsa.etf.academicmanagementsystem.model.Log;
 import ba.unsa.etf.academicmanagementsystem.repository.LogRepository;
-import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service

@@ -1,7 +1,5 @@
 package ba.unsa.etf.academicmanagementsystem;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import ba.unsa.etf.academicmanagementsystem.model.Semester;
 import ba.unsa.etf.academicmanagementsystem.repository.SemesterRepository;
 import org.junit.jupiter.api.Test;
@@ -14,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureTestDatabase(replace = Replace.NONE)

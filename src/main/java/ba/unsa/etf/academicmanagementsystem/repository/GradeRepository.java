@@ -1,27 +1,84 @@
 package ba.unsa.etf.academicmanagementsystem.repository;
 
 import ba.unsa.etf.academicmanagementsystem.model.Grade;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.Modifying;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
-public interface GradeRepository extends JpaRepository<Grade, Long> {
+@RequiredArgsConstructor
+public class GradeRepository {
+    private final JdbcTemplate jdbcTemplate;
 
-    @Query(value = "SELECT * FROM NBP_GRADE", nativeQuery = true)
-    List<Grade> findAllGrades();
+    public List<Grade> findAllGrades() {
+        String sql = "SELECT * FROM NBP_GRADE";
+        return jdbcTemplate.query(sql, new GradeMapper());
+    }
 
-    @Query(value = "SELECT * FROM NBP_GRADE WHERE STUDENT_ID = ?1", nativeQuery = true)
-    List<Grade> findByStudentId(Long studentId);
+    public Grade findGradeById(Long id) {
+        String sql = "SELECT * FROM NBP_GRADE WHERE ID = ?";
+        return jdbcTemplate.queryForObject(sql, new GradeMapper(), id);
+    }
 
-    @Query(value = "SELECT * FROM NBP_GRADE WHERE ID = ?1", nativeQuery = true)
-    Grade findGradeById(Long id);
+    public List<Grade> findByStudentId(Long studentId) {
+        String sql = "SELECT * FROM NBP_GRADE WHERE STUDENT_ID = ?";
+        return jdbcTemplate.query(sql, new GradeMapper(), studentId);
+    }
 
-    @Modifying
     @Transactional
-    @Query(value = "DELETE FROM NBP_GRADE WHERE ID = ?1", nativeQuery = true)
-    void deleteGradeById(Long id);
+    public Grade save(Grade grade) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        if (grade.getId() == null) {
+            String sql = "INSERT INTO NBP_GRADE (DATE_ASSIGNED, GRADE, EXAM_ID, STUDENT_ID) VALUES (?, ?, ?, ?)";
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setTimestamp(1, java.sql.Timestamp.valueOf(grade.getDateAssigned()));
+                ps.setInt(2, grade.getGrade());
+                ps.setLong(3, grade.getExamId());
+                ps.setLong(4, grade.getStudentId());
+                return ps;
+            }, keyHolder);
+            grade.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        } else {
+            String sql = "UPDATE NBP_GRADE SET DATE_ASSIGNED = ?, GRADE = ?, EXAM_ID = ?, STUDENT_ID = ? WHERE ID = ?";
+            jdbcTemplate.update(sql,
+                    grade.getDateAssigned(),
+                    grade.getGrade(),
+                    grade.getExamId(),
+                    grade.getStudentId(),
+                    grade.getId());
+        }
+        return grade;
+    }
+
+    @Transactional
+    public void deleteGradeById(Long id) {
+        String sql = "DELETE FROM NBP_GRADE WHERE ID = ?";
+        jdbcTemplate.update(sql, id);
+    }
+
+    private static final class GradeMapper implements RowMapper<Grade> {
+
+        @Override
+        public Grade mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Grade grade = new Grade();
+            grade.setId(rs.getLong("ID"));
+            grade.setDateAssigned(rs.getTimestamp("DATE_ASSIGNED").toLocalDateTime());
+            grade.setGrade(rs.getInt("GRADE"));
+            grade.setExamId(rs.getLong("EXAM_ID"));
+            grade.setStudentId(rs.getLong("STUDENT_ID"));
+            return grade;
+        }
+    }
 }

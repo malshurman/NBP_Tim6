@@ -1,27 +1,81 @@
 package ba.unsa.etf.academicmanagementsystem.repository;
 
 import ba.unsa.etf.academicmanagementsystem.model.Exam;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.Modifying;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
-public interface ExamRepository extends JpaRepository<Exam, Long> {
+@RequiredArgsConstructor
+public class ExamRepository {
+    private final JdbcTemplate jdbcTemplate;
 
-    @Query(value = "SELECT * FROM NBP_EXAM", nativeQuery = true)
-    List<Exam> findAllExams();
+    public List<Exam> findAllExams() {
+        String sql = "SELECT * FROM NBP_EXAM";
+        return jdbcTemplate.query(sql, new ExamMapper());
+    }
 
-    @Query(value = "SELECT * FROM NBP_EXAM WHERE COURSE_ID = ?1", nativeQuery = true)
-    List<Exam> findByCourseId(Long courseId);
+    public Exam findById(Long id) {
+        String sql = "SELECT * FROM NBP_EXAM WHERE ID = ?";
+        return jdbcTemplate.queryForObject(sql, new ExamMapper(), id);
+    }
 
-    @Query(value = "SELECT * FROM NBP_EXAM WHERE ID = ?1", nativeQuery = true)
-    Exam findExamById(Long id);
+    public List<Exam> findByCourseId(Long courseId) {
+        String sql = "SELECT * FROM NBP_EXAM WHERE COURSE_ID = ?";
+        return jdbcTemplate.query(sql, new ExamMapper(), courseId);
+    }
 
-    @Modifying
     @Transactional
-    @Query(value = "DELETE FROM NBP_EXAM WHERE ID = ?1", nativeQuery = true)
-    void deleteExamById(Long id);
+    public Exam save(Exam exam) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        if (exam.getId() == null) {
+            String sql = "INSERT INTO NBP_EXAM (EXAM_DATE, COURSE_ID, ROOM_ID) VALUES (?, ?, ?)";
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setTimestamp(1, java.sql.Timestamp.valueOf(exam.getExamDate()));
+                ps.setLong(2, exam.getCourseId());
+                ps.setLong(3, exam.getRoomId());
+                return ps;
+            }, keyHolder);
+            exam.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        } else {
+            String sql = "UPDATE NBP_EXAM SET EXAM_DATE = ?, COURSE_ID = ?, ROOM_ID = ? WHERE ID = ?";
+            jdbcTemplate.update(sql,
+                    exam.getExamDate(),
+                    exam.getCourseId(),
+                    exam.getRoomId(),
+                    exam.getId());
+        }
+        return exam;
+    }
+
+    @Transactional
+    public void deleteExamById(Long id) {
+        String sql = "DELETE FROM NBP_EXAM WHERE ID = ?";
+        jdbcTemplate.update(sql, id);
+    }
+
+    private static final class ExamMapper implements RowMapper<Exam> {
+
+        @Override
+        public Exam mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Exam exam = new Exam();
+            exam.setId(rs.getLong("ID"));
+            exam.setExamDate(rs.getTimestamp("EXAM_DATE").toLocalDateTime());
+            exam.setCourseId(rs.getLong("COURSE_ID"));
+            exam.setRoomId(rs.getLong("ROOM_ID"));
+            return exam;
+        }
+    }
 }

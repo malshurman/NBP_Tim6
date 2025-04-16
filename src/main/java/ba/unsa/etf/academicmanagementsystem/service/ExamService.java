@@ -2,8 +2,9 @@ package ba.unsa.etf.academicmanagementsystem.service;
 
 import ba.unsa.etf.academicmanagementsystem.model.Exam;
 import ba.unsa.etf.academicmanagementsystem.repository.ExamRepository;
-import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -17,7 +18,7 @@ public class ExamService {
     }
 
     public Exam getExamById(Long id) {
-        return examRepository.findExamById(id);
+        return examRepository.findById(id);
     }
 
     public List<Exam> getExamsByCourseId(Long courseId) {

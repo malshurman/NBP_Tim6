@@ -1,27 +1,74 @@
 package ba.unsa.etf.academicmanagementsystem.repository;
 
 import ba.unsa.etf.academicmanagementsystem.model.Role;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.Modifying;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
-public interface RoleRepository extends JpaRepository<Role, Long> {
+@RequiredArgsConstructor
+public class RoleRepository {
+    private final JdbcTemplate jdbcTemplate;
 
-    @Query(value = "SELECT * FROM NBP_ROLE", nativeQuery = true)
-    List<Role> findAllRoles();
+    public List<Role> findAllRoles() {
+        String sql = "SELECT * FROM NBP.NBP_ROLE";
+        return jdbcTemplate.query(sql, new RoleMapper());
+    }
 
-    @Query(value = "SELECT * FROM NBP_ROLE WHERE NAME = ?1", nativeQuery = true)
-    Role findByName(String name);
+    public Role findByName(String name) {
+        String sql = "SELECT * FROM NBP.NBP_ROLE WHERE NAME = ?";
+        return jdbcTemplate.queryForObject(sql, new RoleMapper(), name);
+    }
 
-    @Query(value = "SELECT * FROM NBP_ROLE WHERE ID = ?1", nativeQuery = true)
-    Role findRoleById(Long id);
+    public Role findRoleById(Long id) {
+        String sql = "SELECT * FROM NBP.NBP_ROLE WHERE ID = ?";
+        return jdbcTemplate.queryForObject(sql, new RoleMapper(), id);
+    }
 
-    @Modifying
     @Transactional
-    @Query(value = "DELETE FROM NBP_ROLE WHERE ID = ?1", nativeQuery = true)
-    void deleteRoleById(Long id);
+    public Role save(Role role) {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        if (role.getId() == null) {
+            String sql = "INSERT INTO NBP.NBP_ROLE (NAME) VALUES (?)";
+            jdbcTemplate.update(connection -> {
+                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setString(1, role.getName());
+                return ps;
+            }, keyHolder);
+            role.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        } else {
+            String sql = "UPDATE NBP.NBP_ROLE SET NAME = ? WHERE ID = ?";
+            jdbcTemplate.update(sql,
+                    role.getName(),
+                    role.getId());
+        }
+        return role;
+    }
+
+    @Transactional
+    public void deleteRoleById(Long id) {
+        String sql = "DELETE FROM NBP.NBP_ROLE WHERE ID = ?";
+        jdbcTemplate.update(sql, id);
+    }
+
+    private static final class RoleMapper implements RowMapper<Role> {
+        @Override
+        public Role mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Role role = new Role();
+            role.setId(rs.getLong("ID"));
+            role.setName(rs.getString("NAME"));
+            return role;
+        }
+    }
 }
