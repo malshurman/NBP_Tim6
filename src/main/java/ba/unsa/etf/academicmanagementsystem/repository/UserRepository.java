@@ -43,26 +43,68 @@ public class UserRepository {
 
     @Transactional
     public User save(User user) {
-        KeyHolder keyHolder = new GeneratedKeyHolder();
         if (user.getId() == null) {
-            String sql = "INSERT INTO NBP.NBP_USER (BIRTH_DATE, EMAIL, FIRST_NAME, LAST_NAME, PASSWORD, PHONE_NUMBER, USERNAME, ROLE_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO NBP.NBP_USER (BIRTH_DATE, EMAIL, FIRST_NAME, LAST_NAME, PASSWORD, " +
+                    "PHONE_NUMBER, USERNAME, ROLE_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+            // Specify column names for generated keys - this is important for Oracle
+            String[] returnColumns = {"ID"};
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+
             jdbcTemplate.update(connection -> {
-                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-                ps.setTimestamp(2, user.getBirthDate() != null ? java.sql.Timestamp.valueOf(user.getBirthDate()) : null);
-                ps.setString(3, user.getEmail());
-                ps.setString(4, user.getFirstName());
-                ps.setString(5, user.getLastName());
-                ps.setString(6, user.getPasswordHashed());
-                ps.setString(7, user.getPhoneNumber());
-                ps.setString(8, user.getUsername());
-                ps.setLong(9, user.getRoleId());
+                PreparedStatement ps = connection.prepareStatement(sql, returnColumns);
+                ps.setTimestamp(1, user.getDateOfBith() != null ?
+                        java.sql.Timestamp.valueOf(user.getDateOfBith()) : null);
+                ps.setString(2, user.getEmail());
+                ps.setString(3, user.getFirstName());
+                ps.setString(4, user.getLastName());
+                ps.setString(5, user.getPasswordHashed());
+                ps.setString(6, user.getPhoneNumber());
+                ps.setString(7, user.getUsername());
+                ps.setLong(8, user.getRoleId());
                 return ps;
             }, keyHolder);
-            user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+
+            // Try multiple approaches to get the generated ID
+            Long generatedId = null;
+
+            // Try with different key name variations (Oracle can be case-sensitive)
+            if (keyHolder.getKeys() != null) {
+                Object key = keyHolder.getKeys().get("ID");
+                if (key == null) key = keyHolder.getKeys().get("id");
+                if (key instanceof Number) {
+                    generatedId = ((Number) key).longValue();
+                }
+            }
+
+            // Try with keyHolder.getKey() if above failed
+            if (generatedId == null && keyHolder.getKey() != null) {
+                generatedId = keyHolder.getKey().longValue();
+            }
+
+            // If still null, query the database using username (as fallback)
+            if (generatedId == null) {
+                try {
+                    User retrievedUser = findByUsername(user.getUsername());
+                    if (retrievedUser != null) {
+                        generatedId = retrievedUser.getId();
+                    }
+                } catch (Exception ignored) {
+                    // The query might fail if user doesn't exist yet
+                }
+            }
+
+            if (generatedId != null) {
+                user.setId(generatedId);
+            } else {
+                throw new RuntimeException("Failed to retrieve generated ID for user");
+            }
         } else {
-            String sql = "UPDATE NBP.NBP_USER SET BIRTH_DATE = ?, EMAIL = ?, FIRST_NAME = ?, LAST_NAME = ?, PASSWORD = ?, PHONE_NUMBER = ?, USERNAME = ?, ROLE_ID = ? WHERE ID = ?";
+            // Update code remains unchanged
+            String sql = "UPDATE NBP.NBP_USER SET BIRTH_DATE = ?, EMAIL = ?, FIRST_NAME = ?, " +
+                    "LAST_NAME = ?, PASSWORD = ?, PHONE_NUMBER = ?, USERNAME = ?, ROLE_ID = ? WHERE ID = ?";
             jdbcTemplate.update(sql,
-                    user.getBirthDate() != null ? java.sql.Timestamp.valueOf(user.getBirthDate()) : null,
+                    user.getDateOfBith() != null ? java.sql.Timestamp.valueOf(user.getDateOfBith()) : null,
                     user.getEmail(),
                     user.getFirstName(),
                     user.getLastName(),
@@ -87,7 +129,7 @@ public class UserRepository {
         public User mapRow(ResultSet rs, int rowNum) throws SQLException {
             User user = new User();
             user.setId(rs.getLong("ID"));
-            user.setBirthDate(rs.getTimestamp("BIRTH_DATE").toLocalDateTime());
+            user.setDateOfBith(rs.getTimestamp("BIRTH_DATE").toLocalDateTime());
             user.setEmail(rs.getString("EMAIL"));
             user.setFirstName(rs.getString("FIRST_NAME"));
             user.setLastName(rs.getString("LAST_NAME"));

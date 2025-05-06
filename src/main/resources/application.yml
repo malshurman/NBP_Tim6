@@ -29,7 +29,7 @@ springdoc:
 security:
   jwt:
     secret-key: ${JWT_TOKEN}
-    expiration-time: 86400000
+    expiration-ms: 86400000
 
 server:
   port: 8080

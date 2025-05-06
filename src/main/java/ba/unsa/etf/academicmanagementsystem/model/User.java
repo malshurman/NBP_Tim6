@@ -20,7 +20,7 @@ public class User {
     private Long id;
 
     @Past(message = "Birth date must be in the past")
-    private LocalDateTime birthDate;
+    private LocalDateTime dateOfBith;
 
     @NotNull(message = "Email cannot be null")
     @Email(message = "Email should be valid")
