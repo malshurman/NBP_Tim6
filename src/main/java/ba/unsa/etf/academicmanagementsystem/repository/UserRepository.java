@@ -45,15 +45,14 @@ public class UserRepository {
     public User save(User user) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         if (user.getId() == null) {
-            String sql = "INSERT INTO NBP.NBP_USER (ADDRESS_ID, BIRTH_DATE, EMAIL, FIRST_NAME, LAST_NAME, PASSWORD, PHONE_NUMBER, USERNAME, ROLE_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String sql = "INSERT INTO NBP.NBP_USER (BIRTH_DATE, EMAIL, FIRST_NAME, LAST_NAME, PASSWORD, PHONE_NUMBER, USERNAME, ROLE_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             jdbcTemplate.update(connection -> {
                 PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-                ps.setLong(1, user.getAddressId());
                 ps.setTimestamp(2, user.getBirthDate() != null ? java.sql.Timestamp.valueOf(user.getBirthDate()) : null);
                 ps.setString(3, user.getEmail());
                 ps.setString(4, user.getFirstName());
                 ps.setString(5, user.getLastName());
-                ps.setString(6, user.getPassword());
+                ps.setString(6, user.getPasswordHashed());
                 ps.setString(7, user.getPhoneNumber());
                 ps.setString(8, user.getUsername());
                 ps.setLong(9, user.getRoleId());
@@ -61,14 +60,13 @@ public class UserRepository {
             }, keyHolder);
             user.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
         } else {
-            String sql = "UPDATE NBP.NBP_USER SET ADDRESS_ID = ?, BIRTH_DATE = ?, EMAIL = ?, FIRST_NAME = ?, LAST_NAME = ?, PASSWORD = ?, PHONE_NUMBER = ?, USERNAME = ?, ROLE_ID = ? WHERE ID = ?";
+            String sql = "UPDATE NBP.NBP_USER SET BIRTH_DATE = ?, EMAIL = ?, FIRST_NAME = ?, LAST_NAME = ?, PASSWORD = ?, PHONE_NUMBER = ?, USERNAME = ?, ROLE_ID = ? WHERE ID = ?";
             jdbcTemplate.update(sql,
-                    user.getAddressId(),
                     user.getBirthDate() != null ? java.sql.Timestamp.valueOf(user.getBirthDate()) : null,
                     user.getEmail(),
                     user.getFirstName(),
                     user.getLastName(),
-                    user.getPassword(),
+                    user.getPasswordHashed(),
                     user.getPhoneNumber(),
                     user.getUsername(),
                     user.getRoleId(),
@@ -89,12 +87,11 @@ public class UserRepository {
         public User mapRow(ResultSet rs, int rowNum) throws SQLException {
             User user = new User();
             user.setId(rs.getLong("ID"));
-            user.setAddressId(rs.getLong("ADDRESS_ID"));
             user.setBirthDate(rs.getTimestamp("BIRTH_DATE").toLocalDateTime());
             user.setEmail(rs.getString("EMAIL"));
             user.setFirstName(rs.getString("FIRST_NAME"));
             user.setLastName(rs.getString("LAST_NAME"));
-            user.setPassword(rs.getString("PASSWORD"));
+            user.setPasswordHashed(rs.getString("PASSWORD"));
             user.setPhoneNumber(rs.getString("PHONE_NUMBER"));
             user.setUsername(rs.getString("USERNAME"));
             user.setRoleId(rs.getLong("ROLE_ID"));

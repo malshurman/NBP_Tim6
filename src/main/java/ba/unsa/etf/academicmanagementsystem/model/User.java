@@ -19,8 +19,6 @@ public class User {
 
     private Long id;
 
-    private Long addressId;
-
     @Past(message = "Birth date must be in the past")
     private LocalDateTime birthDate;
 
@@ -39,7 +37,7 @@ public class User {
 
     @NotNull(message = "Password cannot be null")
     @Size(max = 255, message = "Password must be at most 255 characters")
-    private String password;
+    private String passwordHashed;
 
     @Size(max = 20, message = "Phone number must be at most 20 characters")
     private String phoneNumber;

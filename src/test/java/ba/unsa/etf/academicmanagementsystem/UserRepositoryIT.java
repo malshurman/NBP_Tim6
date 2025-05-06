@@ -34,12 +34,11 @@ public class UserRepositoryIT {
     @Test
     public void testSaveAndFindUserByEmail() {
         User user = User.builder()
-                .addressId(100L)
                 .birthDate(LocalDateTime.of(1990, 1, 1, 0, 0))
                 .email("dummyuser@example.com")
                 .firstName("John")
                 .lastName("Doe")
-                .password("securepassword")
+                .passwordHashed("securepassword")
                 .phoneNumber("1234567890")
                 .username("johndoe")
                 .roleId(1L)
@@ -53,12 +52,11 @@ public class UserRepositoryIT {
     @Test
     public void testFindByUsername() {
         User user = User.builder()
-                .addressId(100L)
                 .birthDate(LocalDateTime.of(1990, 1, 1, 0, 0))
                 .email("dummyuser@example.com")
                 .firstName("John")
                 .lastName("Doe")
-                .password("securepassword")
+                .passwordHashed("securepassword")
                 .phoneNumber("1234567890")
                 .username("johndoe")
                 .roleId(1L)
@@ -72,12 +70,11 @@ public class UserRepositoryIT {
     @Test
     public void testFindUserById() {
         User user = User.builder()
-                .addressId(100L)
                 .birthDate(LocalDateTime.of(1990, 1, 1, 0, 0))
                 .email("dummyuser@example.com")
                 .firstName("John")
                 .lastName("Doe")
-                .password("securepassword")
+                .passwordHashed("securepassword")
                 .phoneNumber("1234567890")
                 .username("johndoe")
                 .roleId(1L)
@@ -92,12 +89,11 @@ public class UserRepositoryIT {
     @Test
     public void testDeleteUserById() {
         User user = User.builder()
-                .addressId(100L)
                 .birthDate(LocalDateTime.of(1990, 1, 1, 0, 0))
                 .email("dummyuser@example.com")
                 .firstName("John")
                 .lastName("Doe")
-                .password("securepassword")
+                .passwordHashed("securepassword")
                 .phoneNumber("1234567890")
                 .username("johndoe")
                 .roleId(1L)
