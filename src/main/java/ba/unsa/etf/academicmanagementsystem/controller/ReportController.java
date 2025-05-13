@@ -1,39 +1,36 @@
-// File: src/main/java/ba/unsa/etf/academicmanagementsystem/controller/ReportController.java
 package ba.unsa.etf.academicmanagementsystem.controller;
 
+import ba.unsa.etf.academicmanagementsystem.metrics.service.ReportMetricsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/reports")
 @Tag(name = "Report Controller", description = "Endpoints for generating academic and analytics reports")
 public class ReportController {
+    private final ReportMetricsService reportMetricsService;
 
     @Operation(summary = "Academic Performance Report", description = "Generates a report on student and course performance")
-    @GetMapping("/academic-performance")
-    public ResponseEntity<String> getAcademicPerformanceReport() {
-        return ResponseEntity.ok("Academic performance report");
-    }
+    @GetMapping("/student-course-metrics")
+    public ResponseEntity<byte[]> downloadStudentCourseMetrics() throws Exception {
+        byte[] pdf = reportMetricsService.generateStudentCourseMetricsPdf();
 
-    @Operation(summary = "Attendance Report", description = "Generates a report on class attendance")
-    @GetMapping("/attendance")
-    public ResponseEntity<String> getAttendanceReport() {
-        return ResponseEntity.ok("Attendance report");
-    }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("student_course_metrics.pdf")
+                .build());
 
-    @Operation(summary = "Graduation Report", description = "Generates a report on graduation and degree completion progress")
-    @GetMapping("/graduation")
-    public ResponseEntity<String> getGraduationReport() {
-        return ResponseEntity.ok("Graduation report");
-    }
-
-    @Operation(summary = "Faculty Performance Report", description = "Generates a report on faculty performance based on feedback and metrics")
-    @GetMapping("/faculty-performance")
-    public ResponseEntity<String> getFacultyPerformanceReport() {
-        return ResponseEntity.ok("Faculty performance report");
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
     }
 }
