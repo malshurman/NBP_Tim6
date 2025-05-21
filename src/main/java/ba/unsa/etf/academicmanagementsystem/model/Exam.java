@@ -24,4 +24,6 @@ public class Exam {
 
     @NotNull(message = "Room ID cannot be null")
     private Long roomId;
+
+    private byte[] examPdf;
 }

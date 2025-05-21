@@ -22,7 +22,7 @@ public class ReportController {
 
     @Operation(summary = "Academic Performance Report", description = "Generates a report on student and course performance")
     @GetMapping("/student-course-metrics")
-    public ResponseEntity<byte[]> downloadStudentCourseMetrics() throws Exception {
+    public ResponseEntity<byte[]> downloadStudentCourseMetrics() {
         byte[] pdf = reportMetricsService.generateStudentCourseMetricsPdf();
 
         HttpHeaders headers = new HttpHeaders();

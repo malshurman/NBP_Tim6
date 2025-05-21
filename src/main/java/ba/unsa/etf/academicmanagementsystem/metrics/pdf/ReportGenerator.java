@@ -18,7 +18,7 @@ import java.util.List;
 
 public class ReportGenerator {
 
-    public static byte[] exportMetricsToPdf(List<StudentCourseMetricDto> metrics) throws Exception {
+    public static byte[] exportMetricsToPdf(List<StudentCourseMetricDto> metrics) {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate(), 20, 20, 20, 20);
         PdfWriter.getInstance(document, byteArrayOutputStream);
@@ -35,7 +35,7 @@ public class ReportGenerator {
         table.setWidthPercentage(100);
 
         // Set equal column widths (or customize)
-        table.setWidths(new float[] { 2, 3, 3, 2, 5, 2, 2, 2, 2, 2, 2 });
+        table.setWidths(new float[]{2, 3, 3, 2, 5, 2, 2, 2, 2, 2, 2});
 
         // Header styling
         Font headerFont = new Font(Font.HELVETICA, 10, Font.BOLD, Color.WHITE);

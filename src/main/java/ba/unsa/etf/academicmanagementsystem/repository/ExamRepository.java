@@ -1,6 +1,7 @@
 package ba.unsa.etf.academicmanagementsystem.repository;
 
 import ba.unsa.etf.academicmanagementsystem.model.Exam;
+import ba.unsa.etf.academicmanagementsystem.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -12,9 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
@@ -38,23 +38,52 @@ public class ExamRepository {
 
     @Transactional
     public Exam save(Exam exam) {
-        KeyHolder keyHolder = new GeneratedKeyHolder();
         if (exam.getId() == null) {
-            String sql = "INSERT INTO NBP_EXAM (EXAM_DATE, COURSE_ID, ROOM_ID) VALUES (?, ?, ?)";
+            String sql = "INSERT INTO NBP_EXAM (EXAM_DATE, COURSE_ID, ROOM_ID, EXAM_PDF) VALUES (?, ?, ?, ?)";
+
+
+            // Specify column names for generated keys - this is important for Oracle
+            String[] returnColumns = {"ID"};
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+
             jdbcTemplate.update(connection -> {
-                PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                PreparedStatement ps = connection.prepareStatement(sql, returnColumns);
                 ps.setTimestamp(1, java.sql.Timestamp.valueOf(exam.getExamDate()));
                 ps.setLong(2, exam.getCourseId());
                 ps.setLong(3, exam.getRoomId());
+                ps.setBytes(4, exam.getExamPdf());
                 return ps;
             }, keyHolder);
-            exam.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+
+            // Try multiple approaches to get the generated ID
+            Long generatedId = null;
+
+            // Try with different key name variations (Oracle can be case-sensitive)
+            if (keyHolder.getKeys() != null) {
+                Object key = keyHolder.getKeys().get("ID");
+                if (key == null) key = keyHolder.getKeys().get("id");
+                if (key instanceof Number) {
+                    generatedId = ((Number) key).longValue();
+                }
+            }
+
+            // Try with keyHolder.getKey() if above failed
+            if (generatedId == null && keyHolder.getKey() != null) {
+                generatedId = keyHolder.getKey().longValue();
+            }
+
+            if (generatedId != null) {
+                exam.setId(generatedId);
+            } else {
+                throw new RuntimeException("Failed to retrieve generated ID for user");
+            }
         } else {
-            String sql = "UPDATE NBP_EXAM SET EXAM_DATE = ?, COURSE_ID = ?, ROOM_ID = ? WHERE ID = ?";
+            String sql = "UPDATE NBP_EXAM SET EXAM_DATE = ?, COURSE_ID = ?, ROOM_ID = ?, EXAM_PDF = ? WHERE ID = ?";
             jdbcTemplate.update(sql,
-                    exam.getExamDate(),
+                    java.sql.Timestamp.valueOf(exam.getExamDate()),
                     exam.getCourseId(),
                     exam.getRoomId(),
+                    exam.getExamPdf(),
                     exam.getId());
         }
         return exam;
@@ -67,15 +96,15 @@ public class ExamRepository {
     }
 
     private static final class ExamMapper implements RowMapper<Exam> {
-
         @Override
         public Exam mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Exam exam = new Exam();
-            exam.setId(rs.getLong("ID"));
-            exam.setExamDate(rs.getTimestamp("EXAM_DATE").toLocalDateTime());
-            exam.setCourseId(rs.getLong("COURSE_ID"));
-            exam.setRoomId(rs.getLong("ROOM_ID"));
-            return exam;
+            return Exam.builder()
+                    .id(rs.getLong("ID"))
+                    .examDate(rs.getTimestamp("EXAM_DATE").toLocalDateTime())
+                    .courseId(rs.getLong("COURSE_ID"))
+                    .roomId(rs.getLong("ROOM_ID"))
+                    .examPdf(rs.getBytes("EXAM_PDF"))
+                    .build();
         }
     }
 }
