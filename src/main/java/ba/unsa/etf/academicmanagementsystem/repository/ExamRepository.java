@@ -1,7 +1,6 @@
 package ba.unsa.etf.academicmanagementsystem.repository;
 
 import ba.unsa.etf.academicmanagementsystem.model.Exam;
-import ba.unsa.etf.academicmanagementsystem.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -14,7 +13,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 @Repository
 @RequiredArgsConstructor
